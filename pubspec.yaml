@@ -20,6 +20,7 @@ dependencies:
   fluttertoast: ^8.2.2
   device_info_plus: ^9.0.2
   appcheck: ^1.0.6
+  android_long_task: ^1.0.0
 
 
 dev_dependencies:

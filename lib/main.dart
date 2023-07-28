@@ -1,8 +1,30 @@
+import 'package:android_long_task/android_long_task.dart';
 import 'package:flutter/material.dart';
 import 'package:test_env/device_info_page.dart';
 import 'package:test_env/lifecycle.dart';
+import 'package:test_env/test_long_task_page.dart';
 
 import 'app_search_page.dart';
+import 'app_service_config.dart';
+
+@pragma('vm:entry-point')
+Future<void> serviceMain() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  ServiceClient.setExecutionCallback((initialData) async {
+    var serviceData = AppServiceData.fromJson(initialData);
+    for (var i = 0; i < 50; i++) {
+      print('dart -> $i');
+      serviceData.progress = i;
+      await ServiceClient.update(serviceData);
+      if (i > 5) {
+        await ServiceClient.endExecution(serviceData);
+        var result = await ServiceClient.stopService();
+        print(result);
+      }
+      await Future.delayed(const Duration(seconds: 1));
+    }
+  });
+}
 
 void main() {
   runApp(const MainPage());
@@ -124,6 +146,26 @@ class MyDrawer extends StatelessWidget {
                       },
                       child: const Text(
                         'Search for application',
+                        style: TextStyle(fontSize: 16),
+                      ))
+                ],
+              ),
+            ),
+            const SizedBox(
+              height: 8,
+            ),
+            Container(
+              margin: const EdgeInsets.only(left: 24),
+              child: Row(
+                children: [
+                  const Icon(Icons.search),
+                  TextButton(
+                      onPressed: (){
+                        Navigator.pop(context);
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const MyServicePage()));
+                      },
+                      child: const Text(
+                        'Test Service page',
                         style: TextStyle(fontSize: 16),
                       ))
                 ],
