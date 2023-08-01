@@ -1,7 +1,9 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:ffi';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 
 /// Native Service Call
@@ -46,6 +48,7 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   void checkForUpdate() {
     APIHandler.fetchAlbum().then((value) {
       CurrentWeather newData = value;
+      NativeAPIHandler.update(newData);
       if (data == null || newData.isDifferenceWithLastUpdate(data!)) {
         setState(() {
           data = newData;
@@ -57,14 +60,98 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   @override
   Widget build(BuildContext context) {
     debugPrint('Build called');
-    return Center(
-        child: SingleChildScrollView(child: Text(data.toString())));
+    return Center(child: SingleChildScrollView(child: Text(data.toString())));
   }
 
   @override
   void dispose() {
     timer?.cancel();
     super.dispose();
+  }
+}
+
+class NativeAPIHandler {
+  static const methodChannel =
+      MethodChannel('com.example.test_env/message_request');
+  static const apiMethod = "apiHandle";
+  static const updateRequest = "com.example.test_env/update_sqlite";
+  static const readRequest = "com.example.test_env/read_sqlite";
+  static const messageParam = "messageParam";
+  static const requestMethodKey = "request_method_key";
+  static const requestBodyKey = "request_body_key";
+
+  static Future<CurrentWeather> read() async {
+    debugPrint("read request sent");
+    String? result;
+
+    var map = <String, dynamic>{};
+    map[requestMethodKey] = readRequest;
+    map[requestBodyKey] = "";
+    String messageRequest = jsonEncode(map);
+    await methodChannel
+        .invokeMethod(apiMethod, {messageParam: messageRequest})
+        .then((value) => result = value)
+        .catchError((onError) {
+          debugPrint(onError);
+          Future.error(onError);
+        });
+    debugPrint(result);
+
+    if (result == null) {
+      Future.error(Error());
+    }
+
+    Map<String, dynamic> str = jsonDecode(result!);
+
+    String location = str["location"];
+    String country = str["country"];
+    String lastUpdate = str["last_update"];
+    double tempC = str["temp_c"];
+    int windDegree = str["wind_degree"];
+    String windDir = str["wind_dir"];
+    int cloud = str["cloud"];
+    double uv = str["uv"];
+
+    return CurrentWeather(
+        location, country, lastUpdate, tempC, windDegree, windDir, cloud, uv);
+  }
+
+  static Future<Void?> update(CurrentWeather weather) async {
+    var map = <String, dynamic>{};
+    map["location"] = weather.location;
+    map["country"] = weather.country;
+    map["last_update"] = weather.lastUpdate;
+    map["temp_c"] = weather.tempC;
+    map["wind_degree"] = weather.windDegree;
+    map["wind_dir"] = weather.windDir;
+    map["cloud"] = weather.cloud;
+    map["uv"] = weather.uv;
+
+    var json = jsonEncode(map);
+
+    var requestMap = <String, dynamic>{};
+    requestMap[requestMethodKey] = updateRequest;
+    requestMap[requestBodyKey] = json;
+
+    String messageRequest;
+
+    messageRequest = jsonEncode(requestMap);
+
+    debugPrint("message Request: $messageRequest");
+
+    debugPrint("update request sent");
+    String? result;
+
+    await methodChannel
+        .invokeMethod(apiMethod, {messageParam: messageRequest})
+        .then((value) => result = value)
+        .catchError((onError) {
+          debugPrint(onError.toString());
+          Future.error(onError);
+        });
+
+    debugPrint(result);
+    return null;
   }
 }
 
@@ -114,7 +201,6 @@ class APIHandler {
       // If the server did not return a 200 OK response,
       // then throw an exception.
       throw Exception('Failed to load weather');
-
     }
   }
 }
