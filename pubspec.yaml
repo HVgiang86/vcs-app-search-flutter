@@ -21,6 +21,7 @@ dependencies:
   device_info_plus: ^9.0.2
   appcheck: ^1.0.6
   android_long_task: ^1.0.0
+  http: ^1.1.0
 
 
 dev_dependencies:

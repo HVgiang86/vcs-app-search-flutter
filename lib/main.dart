@@ -6,6 +6,7 @@ import 'package:test_env/test_long_task_page.dart';
 
 import 'app_search_page.dart';
 import 'app_service_config.dart';
+import 'service_call_flutter.dart';
 
 @pragma('vm:entry-point')
 Future<void> serviceMain() async {
@@ -158,7 +159,7 @@ class MyDrawer extends StatelessWidget {
               margin: const EdgeInsets.only(left: 24),
               child: Row(
                 children: [
-                  const Icon(Icons.search),
+                  const Icon(Icons.bug_report),
                   TextButton(
                       onPressed: (){
                         Navigator.pop(context);
@@ -166,6 +167,26 @@ class MyDrawer extends StatelessWidget {
                       },
                       child: const Text(
                         'Test Service page',
+                        style: TextStyle(fontSize: 16),
+                      ))
+                ],
+              ),
+            ),
+            const SizedBox(
+              height: 8,
+            ),
+            Container(
+              margin: const EdgeInsets.only(left: 24),
+              child: Row(
+                children: [
+                  const Icon(Icons.android),
+                  TextButton(
+                      onPressed: (){
+                        Navigator.pop(context);
+                        Navigator.push(context, MaterialPageRoute(builder: (context) => const WeatherPage()));
+                      },
+                      child: const Text(
+                        'Test Native Method Call\n[Weather App]',
                         style: TextStyle(fontSize: 16),
                       ))
                 ],
