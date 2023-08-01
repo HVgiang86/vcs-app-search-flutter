@@ -25,44 +25,67 @@ class WeatherSQLiteHelper(context: Context?) : SQLiteOpenHelper(context, DATABAS
     }
 
     override fun onCreate(p0: SQLiteDatabase?) {
-        val sqlCreate = String.format("CREATE TABLE %s (\n" + "    %s TEXT PRIMARY KEY,\n" + "    %s TEXT,\n" + "    %s TEXT,\n" + "    %s REAL,\n" + "    %s INTEGER,\n" + "    %s TEXT,\n" + "    %s INTEGER,\n" + "    %s REAL\n" + ")", TABLE_NAME, KEY_LAST_UPDATE, KEY_LOCATION, KEY_COUNTRY, KEY_TEMP_C, KEY_WIN_DEGREE, KEY_WIN_DIR, KEY_CLOUD, KEY_UV)
-        p0?.execSQL(sqlCreate)
+        try {
+            val sqlCreate = String.format("CREATE TABLE %s (\n" + "    %s TEXT PRIMARY KEY,\n" + "    %s TEXT,\n" + "    %s TEXT,\n" + "    %s REAL,\n" + "    %s INTEGER,\n" + "    %s TEXT,\n" + "    %s INTEGER,\n" + "    %s REAL\n" + ")", TABLE_NAME, KEY_LAST_UPDATE, KEY_LOCATION, KEY_COUNTRY, KEY_TEMP_C, KEY_WIN_DEGREE, KEY_WIN_DIR, KEY_CLOUD, KEY_UV)
+            p0?.execSQL(sqlCreate)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
     }
 
     override fun onUpgrade(p0: SQLiteDatabase?, p1: Int, p2: Int) {
-        val sqlDrop = java.lang.String.format("DROP TABLE IF EXISTS %s", TABLE_NAME)
-        p0?.execSQL(sqlDrop)
+        try {
+            val sqlDrop = java.lang.String.format("DROP TABLE IF EXISTS %s", TABLE_NAME)
+            p0?.execSQL(sqlDrop)
 
-        onCreate(p0)
+            onCreate(p0)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
     }
 
     fun addRecord(w: WeatherInfo) {
-        val content = ContentValues()
-        content.put(KEY_LOCATION, w.location)
-        content.put(KEY_CLOUD, w.cloud)
-        content.put(KEY_COUNTRY, w.country)
-        content.put(KEY_UV, w.uv)
-        content.put(KEY_LAST_UPDATE, w.lastUpdate)
-        content.put(KEY_TEMP_C, w.tempC)
-        content.put(KEY_WIN_DIR, w.windDir)
-        content.put(KEY_WIN_DEGREE, w.windDegree)
+        try {
+            val content = ContentValues()
+            content.put(KEY_LOCATION, w.location)
+            content.put(KEY_CLOUD, w.cloud)
+            content.put(KEY_COUNTRY, w.country)
+            content.put(KEY_UV, w.uv)
+            content.put(KEY_LAST_UPDATE, w.lastUpdate)
+            content.put(KEY_TEMP_C, w.tempC)
+            content.put(KEY_WIN_DIR, w.windDir)
+            content.put(KEY_WIN_DEGREE, w.windDegree)
 
-        writableDatabase.insert(TABLE_NAME, null, content)
-        writableDatabase.close()
+            writableDatabase.insert(TABLE_NAME, null, content)
+            writableDatabase.close()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
     }
 
     fun readOldest(): WeatherInfo? {
-        val cursor = readableDatabase.query(TABLE_NAME, null, null, null, null, null, KEY_LAST_UPDATE)
-        if (cursor != null) {
-            cursor.moveToFirst()
-            Log.d("SQLite", "number of records: ${cursor.count}")
-            val w = WeatherInfo(lastUpdate = cursor.getString(0), location = cursor.getString(1), country = cursor.getString(2), tempC = cursor.getFloat(3), windDegree = cursor.getInt(4), windDir = cursor.getString(5), cloud = cursor.getInt(6), uv = cursor.getFloat(7))
-            cursor.close()
-            return w
+        try {
+            val cursor = readableDatabase.query(TABLE_NAME, null, null, null, null, null, KEY_LAST_UPDATE)
+            if (cursor != null) {
+                cursor.moveToFirst()
+                Log.d("SQLite", "number of records: ${cursor.count}")
+                if (cursor.count == 0) {
+                    return null
+                }
+                val w = WeatherInfo(lastUpdate = cursor.getString(0), location = cursor.getString(1), country = cursor.getString(2), tempC = cursor.getDouble(3), windDegree = cursor.getInt(4), windDir = cursor.getString(5), cloud = cursor.getInt(6), uv = cursor.getDouble(7))
+                cursor.close()
+                return w
+            }
+
+            return null
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
         return null
     }
-
 
 
 }

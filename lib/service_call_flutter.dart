@@ -46,10 +46,17 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   }
 
   void checkForUpdate() {
-    APIHandler.fetchAlbum().then((value) {
+    APIHandler.fetchAlbum().then((value) async {
       CurrentWeather newData = value;
-      NativeAPIHandler.update(newData);
-      if (data == null || newData.isDifferenceWithLastUpdate(data!)) {
+      var lastData;
+      await NativeAPIHandler.read().then((value) => lastData = value).onError((error, stackTrace) {
+        lastData = null;
+        return CurrentWeather("", "", "", 0, 0, "", 0, 0);
+      });
+
+      if (lastData == null || newData.isDifferenceWithLastUpdate(lastData)) {
+        debugPrint("update requested");
+        await NativeAPIHandler.update(newData);
         setState(() {
           data = newData;
         });
@@ -92,7 +99,6 @@ class NativeAPIHandler {
         .invokeMethod(apiMethod, {messageParam: messageRequest})
         .then((value) => result = value)
         .catchError((onError) {
-          debugPrint(onError);
           Future.error(onError);
         });
     debugPrint(result);
@@ -106,11 +112,11 @@ class NativeAPIHandler {
     String location = str["location"];
     String country = str["country"];
     String lastUpdate = str["last_update"];
-    double tempC = str["temp_c"];
-    int windDegree = str["wind_degree"];
+    num tempC = str["temp_c"];
+    num windDegree = str["wind_degree"];
     String windDir = str["wind_dir"];
-    int cloud = str["cloud"];
-    double uv = str["uv"];
+    num cloud = str["cloud"];
+    num uv = str["uv"];
 
     return CurrentWeather(
         location, country, lastUpdate, tempC, windDegree, windDir, cloud, uv);
@@ -172,11 +178,11 @@ class APIHandler {
       String location = "undefined";
       String country = "undefined";
       String lastUpdate = "undefined";
-      double tempC = 0;
-      int windDegree = 0;
+      num tempC = 0;
+      num windDegree = 0;
       String windDir = "undefined";
-      int cloud = 0;
-      double uv = 0;
+      num cloud = 0;
+      num uv = 0;
 
       Map<String, dynamic> result = jsonDecode(response.body);
       result.forEach((key, value) {
@@ -209,11 +215,11 @@ class CurrentWeather {
   final String location;
   final String country;
   final String lastUpdate;
-  final double tempC;
-  final int windDegree;
+  final num tempC;
+  final num windDegree;
   final String windDir;
-  final int cloud;
-  final double uv;
+  final num cloud;
+  final num uv;
 
   CurrentWeather(this.location, this.country, this.lastUpdate, this.tempC,
       this.windDegree, this.windDir, this.cloud, this.uv);

@@ -27,6 +27,9 @@ class MainActivity : FlutterActivity() {
             run {
                 if (call.method == apiMethod) {
                     val message = call.argument<String>(messageParam)
+                    if (!call.hasArgument(messageParam)) {
+                        Log.d("API Handle", "not have argument")
+                    }
                     val r = apiHandle(message!!)
 
                     if (r == null) {
@@ -43,21 +46,25 @@ class MainActivity : FlutterActivity() {
     }
 
     private fun apiHandle(messageParam: String): String? {
-        if (messageParam.isEmpty() || messageParam == null) {
-            Log.d("API Handle","messageParam empty")
-            return null}
+        if (messageParam.isEmpty()) {
+            Log.d("API Handle", "messageParam empty")
+            return null
+        }
 
-        Log.d("API Handle","messageParam: $messageParam")
+        Log.d("API Handle", "messageParam: $messageParam")
 
         val request = messageParamParser(messageParam)
 
         if (request[REQUEST_METHOD_KEY] == UPDATE_REQUEST) {
+
             val weather = WeatherInfo.jsonParse(request[REQUEST_BODY_KEY] as JSONObject)
+            Log.d("API Handle", "sql add record requested. $weather")
             sqlHelper.addRecord(weather)
 
             return "success"
         } else if (request[REQUEST_METHOD_KEY] == READ_REQUEST) {
-            val weather = sqlHelper.readOldest()
+            val weather = sqlHelper.readOldest() ?: return null
+            Log.d("API Handle", "sql read record requested. $weather")
             return weather?.toJSON()?.toString()
         }
 
@@ -69,9 +76,16 @@ class MainActivity : FlutterActivity() {
         val root = JSONObject(messageParam)
         map[REQUEST_METHOD_KEY] = root[REQUEST_METHOD_KEY]
         val strRequestBody = root[REQUEST_BODY_KEY].toString()
-        val jsonObj = JSONObject(strRequestBody)
-        map[REQUEST_METHOD_KEY] = jsonObj
 
+        if (strRequestBody.isEmpty()) {
+            map[REQUEST_BODY_KEY] = ""
+        } else {
+            val jsonObj = JSONObject(strRequestBody)
+            map[REQUEST_BODY_KEY] = jsonObj
+        }
+
+        Log.d("API Handle", "$REQUEST_METHOD_KEY: ${map[REQUEST_METHOD_KEY]}")
+        Log.d("API Handle", "$REQUEST_BODY_KEY: ${map[REQUEST_BODY_KEY]}")
         return map
     }
 }
