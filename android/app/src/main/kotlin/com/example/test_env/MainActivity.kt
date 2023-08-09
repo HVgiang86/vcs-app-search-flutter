@@ -65,7 +65,7 @@ class MainActivity : FlutterActivity() {
         } else if (request[REQUEST_METHOD_KEY] == READ_REQUEST) {
             val weather = sqlHelper.readOldest() ?: return null
             Log.d("API Handle", "sql read record requested. $weather")
-            return weather?.toJSON()?.toString()
+            return weather.toJSON()?.toString()
         }
 
         return null
