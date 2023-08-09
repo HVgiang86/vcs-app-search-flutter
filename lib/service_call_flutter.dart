@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -10,13 +9,13 @@ import 'package:http/http.dart' as http;
 /// Native Service Call
 
 class WeatherPage extends StatelessWidget {
-
   const WeatherPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     debugPrint("service requested");
     NativeAPIHandler.requestService();
+
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
@@ -40,21 +39,31 @@ class WeatherWidget extends StatefulWidget {
 class _WeatherWidgetState extends State<WeatherWidget> {
   CurrentWeather? data;
   Timer? timer;
-  int count = 0;
+  static int count = 0;
 
   @override
   void initState() {
     super.initState();
-
+    NativeEventChannel eventChannel = NativeEventChannel();
+    eventChannel.widget = this;
+    eventChannel.setupEventChannel();
     timer = Timer.periodic(
         const Duration(seconds: 2), (Timer t) => checkForUpdate());
+  }
+
+  void increaseCount() {
+    setState(() {
+      count++;
+    });
   }
 
   void checkForUpdate() {
     APIHandler.fetchAlbum().then((value) async {
       CurrentWeather newData = value;
       var lastData;
-      await NativeAPIHandler.read().then((value) => lastData = value).onError((error, stackTrace) {
+      await NativeAPIHandler.read()
+          .then((value) => lastData = value)
+          .onError((error, stackTrace) {
         lastData = null;
         return CurrentWeather("", "", "", 0, 0, "", 0, 0);
       });
@@ -74,8 +83,14 @@ class _WeatherWidgetState extends State<WeatherWidget> {
     debugPrint('Build called');
     return Column(
       children: [
-        Center(child: Text("Count: $count", style: const TextStyle(fontSize: 18)))
-        ,Center(child: SingleChildScrollView(child: Text(data.toString(), style: const TextStyle(fontSize: 18),))),
+        Center(
+            child: Text("Count: $count", style: const TextStyle(fontSize: 18))),
+        Center(
+            child: SingleChildScrollView(
+                child: Text(
+          data.toString(),
+          style: const TextStyle(fontSize: 18),
+        ))),
       ],
     );
   }
@@ -84,6 +99,24 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   void dispose() {
     timer?.cancel();
     super.dispose();
+  }
+}
+
+class NativeEventChannel {
+  _WeatherWidgetState? widget;
+  static const eventChannel =
+      EventChannel("com.example.test_env/event_channel");
+  StreamSubscription? subscription;
+
+  void setupEventChannel() {
+    subscription = eventChannel.receiveBroadcastStream().listen((event) {
+      debugPrint("Received message: $event");
+      widget!.increaseCount();
+    });
+  }
+
+  void closeEventChannel() {
+    subscription?.cancel();
   }
 }
 
@@ -132,7 +165,8 @@ class NativeAPIHandler {
     return CurrentWeather(
         location, country, lastUpdate, tempC, windDegree, windDir, cloud, uv);
   }
-  static Future<Void?> requestService() async{
+
+  static Future<Void?> requestService() async {
     debugPrint("service request sent");
     String? result;
 
@@ -144,8 +178,8 @@ class NativeAPIHandler {
         .invokeMethod(apiMethod, {messageParam: messageRequest})
         .then((value) => result = value)
         .catchError((onError) {
-      Future.error(onError);
-    });
+          Future.error(onError);
+        });
     debugPrint(result);
 
     if (result == null) {
