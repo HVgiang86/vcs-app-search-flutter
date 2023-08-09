@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:scroll_loop_auto_scroll/scroll_loop_auto_scroll.dart';
 
 class LifecycleWatcher extends StatefulWidget {
   const LifecycleWatcher({super.key});
@@ -44,8 +45,12 @@ class _LifecycleWatcherState extends State<LifecycleWatcher>
             .withOpacity(1.0);
       }
     }
-    return Text('Viettel Cyber Security',
-        style:
-            TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18));
+    return ScrollLoopAutoScroll(
+      child: Text(
+        'Viettel Cyber Security. Very long text that bleeds out of the rendering space',
+        style:  TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 18),
+      ),
+      scrollDirection: Axis.horizontal,
+    );
   }
 }

@@ -22,6 +22,7 @@ dependencies:
   appcheck: ^1.0.6
   android_long_task: ^1.0.0
   http: ^1.1.0
+  scroll_loop_auto_scroll: ^0.0.5
 
 
 dev_dependencies:
