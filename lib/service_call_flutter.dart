@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:ffi';
 
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
@@ -9,10 +10,13 @@ import 'package:http/http.dart' as http;
 /// Native Service Call
 
 class WeatherPage extends StatelessWidget {
+
   const WeatherPage({super.key});
 
   @override
   Widget build(BuildContext context) {
+    debugPrint("service requested");
+    NativeAPIHandler.requestService();
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
@@ -36,6 +40,7 @@ class WeatherWidget extends StatefulWidget {
 class _WeatherWidgetState extends State<WeatherWidget> {
   CurrentWeather? data;
   Timer? timer;
+  int count = 0;
 
   @override
   void initState() {
@@ -67,7 +72,12 @@ class _WeatherWidgetState extends State<WeatherWidget> {
   @override
   Widget build(BuildContext context) {
     debugPrint('Build called');
-    return Center(child: SingleChildScrollView(child: Text(data.toString())));
+    return Column(
+      children: [
+        Center(child: Text("Count: $count", style: const TextStyle(fontSize: 18)))
+        ,Center(child: SingleChildScrollView(child: Text(data.toString(), style: const TextStyle(fontSize: 18),))),
+      ],
+    );
   }
 
   @override
@@ -86,6 +96,7 @@ class NativeAPIHandler {
   static const messageParam = "messageParam";
   static const requestMethodKey = "request_method_key";
   static const requestBodyKey = "request_body_key";
+  static const requestForegroundService = "com.example.test_env/notification";
 
   static Future<CurrentWeather> read() async {
     debugPrint("read request sent");
@@ -120,6 +131,26 @@ class NativeAPIHandler {
 
     return CurrentWeather(
         location, country, lastUpdate, tempC, windDegree, windDir, cloud, uv);
+  }
+  static Future<Void?> requestService() async{
+    debugPrint("service request sent");
+    String? result;
+
+    var map = <String, dynamic>{};
+    map[requestMethodKey] = requestForegroundService;
+    map[requestBodyKey] = "";
+    String messageRequest = jsonEncode(map);
+    await methodChannel
+        .invokeMethod(apiMethod, {messageParam: messageRequest})
+        .then((value) => result = value)
+        .catchError((onError) {
+      Future.error(onError);
+    });
+    debugPrint(result);
+
+    if (result == null) {
+      Future.error(Error());
+    }
   }
 
   static Future<Void?> update(CurrentWeather weather) async {
